@@ -1,2 +1,5 @@
-# taskpipeline
-Pipeline implementation based on Project Reactor for async task execution
+# Pipeline implementation for async task execution
+Implementation based on [Project Reactor](https://projectreactor.io/)
+
+## Usage
+TODO
