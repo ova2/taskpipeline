@@ -34,6 +34,10 @@ public class TaskPipelineFactory {
 	}
 
 	public static TaskTreePipeline create(TaskTreePipelineConfig config) {
+		// just an usage example
+		TaskTreePipeline pipeline = new TaskTreePipeline(null);
+		Flux<Integer> flux = pipeline.getOutput("test", Integer.class);
+
 		// TODO
 		return null;
 	}
