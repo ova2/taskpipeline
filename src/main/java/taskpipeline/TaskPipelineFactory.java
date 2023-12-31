@@ -20,15 +20,17 @@ public class TaskPipelineFactory {
 
 	public static <T> TaskFlowPipeline<T, T> create(TaskFlowPipelineConfig config) {
 		Sinks.Many<AsyncTask<T>> sink = createTaskFlowPipelineInput(config);
-		Flux<T> output = createTaskFlowPipelineOutput(sink.asFlux(), config);
+		Scheduler outputScheduler = Schedulers.newSingle("TaskPipeline-output");
+		Flux<T> output = createTaskFlowPipelineOutput(sink.asFlux(), config, outputScheduler);
 		return new TaskFlowPipeline<T, T>(sink, output);
 	}
 
 	public static <T, R> TaskFlowPipeline<T, R> create(TaskFlowPipelineConfig config,
 			TaskPipelineBatchConfig<T, R> batchConfig) {
 		Sinks.Many<AsyncTask<T>> sink = createTaskFlowPipelineInput(config);
-		Flux<R> output = createTaskFlowPipelineOutput(sink.asFlux(), config) //
-				.bufferTimeout(batchConfig.getBufferMaxSize(), batchConfig.getBufferMaxTime()) //
+		Scheduler outputScheduler = Schedulers.newSingle("TaskPipeline-output");
+		Flux<R> output = createTaskFlowPipelineOutput(sink.asFlux(), config, outputScheduler) //
+				.bufferTimeout(batchConfig.getBufferMaxSize(), batchConfig.getBufferMaxTime(), outputScheduler) //
 				.map(batch -> batchConfig.getBatchAggregator().aggregate(batch));
 		return new TaskFlowPipeline<T, R>(sink, output);
 	}
@@ -51,8 +53,8 @@ public class TaskPipelineFactory {
 		};
 	}
 
-	private static <T> Flux<T> createTaskFlowPipelineOutput(Flux<AsyncTask<T>> taskFlux,
-			TaskFlowPipelineConfig config) {
+	private static <T> Flux<T> createTaskFlowPipelineOutput(Flux<AsyncTask<T>> taskFlux, TaskFlowPipelineConfig config,
+			Scheduler outputScheduler) {
 		Flux<Publisher<T>> flux;
 		if (config.isPreserveSourceOrdering()) {
 			flux = taskFlux //
@@ -61,11 +63,10 @@ public class TaskPipelineFactory {
 			flux = taskFlux //
 					.flatMap(getMapper(config.getTaskExecutor()));
 		}
-		Scheduler publishOnScheduler = Schedulers.newSingle("TaskPipeline");
-		return flux.publishOn(publishOnScheduler) //
+		return flux.publishOn(outputScheduler) //
 				// flatten output
 				.flatMap(p -> p) //
-				.doOnComplete(() -> publishOnScheduler.dispose());
+				.doOnComplete(() -> outputScheduler.dispose());
 	}
 
 	private static <T> Function<AsyncTask<T>, Mono<Publisher<T>>> getMapper(Executor taskExecutor) {

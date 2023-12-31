@@ -6,6 +6,10 @@ import lombok.Builder;
 import lombok.NonNull;
 import lombok.Value;
 
+/**
+ * Batching was inspired by
+ * https://zone84.tech/programming/creating-batches-with-project-reactor/
+ */
 @Value
 @Builder
 public class TaskPipelineBatchConfig<T, R> {
