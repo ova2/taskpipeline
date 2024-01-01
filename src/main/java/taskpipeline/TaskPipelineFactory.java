@@ -1,4 +1,4 @@
-package main.java.taskpipeline;
+package taskpipeline;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -6,35 +6,51 @@ import java.util.function.Function;
 
 import org.reactivestreams.Publisher;
 
-import main.java.taskpipeline.config.TaskFlowPipelineConfig;
-import main.java.taskpipeline.config.TaskPipelineBatchConfig;
-import main.java.taskpipeline.config.TaskTreePipelineConfig;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
 import reactor.core.publisher.Sinks.ManySpec;
 import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
+import taskpipeline.config.TaskFlowPipelineConfig;
+import taskpipeline.config.TaskPipelineBatchConfig;
+import taskpipeline.config.TaskTreePipelineConfig;
 
+/**
+ * Factory for two kinds of pipeline.
+ */
 public class TaskPipelineFactory {
 
+	private static String SINGLE_THREAD_NAME_PREFIX = "TaskPipeline-output";
+
+	/**
+	 * Creates an instance of {@link TaskFlowPipeline} with the given base
+	 * configuration without batches.
+	 */
 	public static <T> TaskFlowPipeline<T, T> create(TaskFlowPipelineConfig config) {
-		Sinks.Many<AsyncTask<T>> sink = createTaskFlowPipelineInput(config);
-		Scheduler outputScheduler = Schedulers.newSingle("TaskPipeline-output");
+		Sinks.Many<TaskSupplier<T>> sink = createTaskFlowPipelineInput(config);
+		Scheduler outputScheduler = Schedulers.newSingle(SINGLE_THREAD_NAME_PREFIX);
 		Flux<T> output = createTaskFlowPipelineOutput(sink.asFlux(), config, outputScheduler);
 		return new TaskFlowPipeline<T, T>(sink, output);
 	}
 
-	public static <T, R> TaskFlowPipeline<T, R> create(TaskFlowPipelineConfig config,
-			TaskPipelineBatchConfig<T, R> batchConfig) {
-		Sinks.Many<AsyncTask<T>> sink = createTaskFlowPipelineInput(config);
-		Scheduler outputScheduler = Schedulers.newSingle("TaskPipeline-output");
-		Flux<R> output = createTaskFlowPipelineOutput(sink.asFlux(), config, outputScheduler) //
+	/**
+	 * Creates an instance of {@link TaskFlowPipeline} with the given base
+	 * configuration and the configuration for batches.
+	 */
+	public static <T, U> TaskFlowPipeline<T, U> create(TaskFlowPipelineConfig config,
+			TaskPipelineBatchConfig<T, U> batchConfig) {
+		Sinks.Many<TaskSupplier<T>> sink = createTaskFlowPipelineInput(config);
+		Scheduler outputScheduler = Schedulers.newSingle(SINGLE_THREAD_NAME_PREFIX);
+		Flux<U> output = createTaskFlowPipelineOutput(sink.asFlux(), config, outputScheduler) //
 				.bufferTimeout(batchConfig.getBufferMaxSize(), batchConfig.getBufferMaxTime(), outputScheduler) //
 				.map(batch -> batchConfig.getBatchAggregator().aggregate(batch));
-		return new TaskFlowPipeline<T, R>(sink, output);
+		return new TaskFlowPipeline<T, U>(sink, output);
 	}
 
+	/**
+	 * Creates an instance of {@link TaskTreePipeline} with the given configuration.
+	 */
 	public static TaskTreePipeline create(TaskTreePipelineConfig config) {
 		// just an usage example
 		TaskTreePipeline pipeline = new TaskTreePipeline(null);
@@ -44,17 +60,17 @@ public class TaskPipelineFactory {
 		return null;
 	}
 
-	private static <T> Sinks.Many<AsyncTask<T>> createTaskFlowPipelineInput(TaskFlowPipelineConfig config) {
+	private static <T> Sinks.Many<TaskSupplier<T>> createTaskFlowPipelineInput(TaskFlowPipelineConfig config) {
 		ManySpec manySpec = Sinks.many();
 		return switch (config.getPipelineSpec()) {
-		case UNICAST -> manySpec.unicast().<AsyncTask<T>>onBackpressureBuffer();
-		case MULTICAST -> manySpec.multicast().<AsyncTask<T>>onBackpressureBuffer();
-		case MULTICAST_REPLAY -> manySpec.replay().<AsyncTask<T>>all();
+		case UNICAST -> manySpec.unicast().<TaskSupplier<T>>onBackpressureBuffer();
+		case MULTICAST -> manySpec.multicast().<TaskSupplier<T>>onBackpressureBuffer();
+		case MULTICAST_REPLAY -> manySpec.replay().<TaskSupplier<T>>all();
 		};
 	}
 
-	private static <T> Flux<T> createTaskFlowPipelineOutput(Flux<AsyncTask<T>> taskFlux, TaskFlowPipelineConfig config,
-			Scheduler outputScheduler) {
+	private static <T> Flux<T> createTaskFlowPipelineOutput(Flux<TaskSupplier<T>> taskFlux,
+			TaskFlowPipelineConfig config, Scheduler outputScheduler) {
 		Flux<Publisher<T>> flux;
 		if (config.isPreserveSourceOrdering()) {
 			flux = taskFlux //
@@ -69,8 +85,8 @@ public class TaskPipelineFactory {
 				.doOnComplete(() -> outputScheduler.dispose());
 	}
 
-	private static <T> Function<AsyncTask<T>, Mono<Publisher<T>>> getMapper(Executor taskExecutor) {
-		return (AsyncTask<T> task) -> Mono
+	private static <T> Function<TaskSupplier<T>, Mono<Publisher<T>>> getMapper(Executor taskExecutor) {
+		return (TaskSupplier<T> task) -> Mono
 				.fromFuture(CompletableFuture.supplyAsync(() -> task.execute(), taskExecutor));
 	}
 }

@@ -1,4 +1,4 @@
-package test.java;
+package taskpipeline;
 
 import java.time.Duration;
 import java.util.concurrent.ExecutorService;
@@ -8,13 +8,10 @@ import java.util.concurrent.ForkJoinPool;
 import org.junit.jupiter.api.Test;
 
 import lombok.extern.slf4j.Slf4j;
-import main.java.taskpipeline.AsyncTask;
-import main.java.taskpipeline.TaskFlowPipeline;
-import main.java.taskpipeline.TaskPipelineFactory;
-import main.java.taskpipeline.config.TaskFlowPipelineConfig;
-import main.java.taskpipeline.config.TaskPipelineBatchConfig;
-import main.java.taskpipeline.config.TaskPipelineSpec;
 import reactor.core.publisher.Sinks;
+import taskpipeline.config.TaskFlowPipelineConfig;
+import taskpipeline.config.TaskPipelineBatchConfig;
+import taskpipeline.config.TaskPipelineSpec;
 
 @Slf4j
 class TaskPipelineFactoryTest {
@@ -24,22 +21,21 @@ class TaskPipelineFactoryTest {
 		int parallelism = Math.max((int) Math.floor(ForkJoinPool.getCommonPoolParallelism() / 2f), 2);
 		ExecutorService executorService = Executors.newWorkStealingPool(parallelism);
 
-		TaskFlowPipeline<AsyncTaskResult, AsyncTaskResult> pipeline = TaskPipelineFactory
-				.create(TaskFlowPipelineConfig.builder() //
-						.pipelineSpec(TaskPipelineSpec.UNICAST) //
-						.preserveSourceOrdering(true) //
-						.taskExecutor(executorService) //
-						.build());
+		TaskFlowPipeline<TaskResult, TaskResult> pipeline = TaskPipelineFactory.create(TaskFlowPipelineConfig.builder() //
+				.pipelineSpec(TaskPipelineSpec.UNICAST) //
+				.preserveSourceOrdering(true) //
+				.taskExecutor(executorService) //
+				.build());
 
 		long ms = System.currentTimeMillis();
 		pipeline.getOutput() //
 				.doOnComplete(() -> log.info("Finished in {} sec.", (System.currentTimeMillis() - ms) / 1000f)) //
 				.subscribe(taskResult -> log.info("Output task result {}", taskResult.getName()));
 
-		Sinks.Many<AsyncTask<AsyncTaskResult>> input = pipeline.getInput();
+		Sinks.Many<TaskSupplier<TaskResult>> input = pipeline.getInput();
 		char name = 'A';
 		for (int i = 0; i < 100; i++) {
-			input.tryEmitNext(ConcreteAsyncTask.builder() //
+			input.tryEmitNext(ConcreteTaskSupplier.builder() //
 					.name(String.valueOf((char) ((int) name + i))) //
 					.build());
 		}
@@ -57,16 +53,16 @@ class TaskPipelineFactoryTest {
 		int parallelism = Math.max((int) Math.floor(ForkJoinPool.getCommonPoolParallelism() / 2f), 2);
 		ExecutorService executorService = Executors.newWorkStealingPool(parallelism);
 
-		TaskFlowPipeline<AsyncTaskResult, String> pipeline = TaskPipelineFactory.create( //
+		TaskFlowPipeline<TaskResult, String> pipeline = TaskPipelineFactory.create( //
 				TaskFlowPipelineConfig.builder() //
 						.pipelineSpec(TaskPipelineSpec.UNICAST) //
 						.taskExecutor(executorService) //
 						.build(),
-				TaskPipelineBatchConfig.<AsyncTaskResult, String>builder() //
+				TaskPipelineBatchConfig.<TaskResult, String>builder() //
 						.bufferMaxSize(10) //
 						.bufferMaxTime(Duration.ofMillis(250)) //
 						.batchAggregator(batch -> String.join(",", batch.stream() //
-								.map(AsyncTaskResult::getName) //
+								.map(TaskResult::getName) //
 								.toList()))
 						.build());
 
@@ -75,10 +71,10 @@ class TaskPipelineFactoryTest {
 				.doOnComplete(() -> log.info("Finished in {} sec.", (System.currentTimeMillis() - ms) / 1000f)) //
 				.subscribe(taskResult -> log.info("Output task result {}", taskResult));
 
-		Sinks.Many<AsyncTask<AsyncTaskResult>> input = pipeline.getInput();
+		Sinks.Many<TaskSupplier<TaskResult>> input = pipeline.getInput();
 		char name = 'A';
 		for (int i = 0; i < 100; i++) {
-			input.tryEmitNext(ConcreteAsyncTask.builder() //
+			input.tryEmitNext(ConcreteTaskSupplier.builder() //
 					.name(String.valueOf((char) ((int) name + i))) //
 					.build());
 		}
@@ -89,5 +85,22 @@ class TaskPipelineFactoryTest {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
+	}
+
+	/**
+	 * Create and test a TaskTreePipeline with a deep = 3.
+	 * 
+	 * <pre>
+	 * Root Task
+	 *   - Sub-Task 1
+	 *   - Sub-Task 2
+	 *     - Sub-Task 21
+	 *     - Sub-Task 22
+	 *     - Sub-Task 23
+	 * </pre>
+	 */
+	@Test
+	void createTaskTreePipeline_shouldOutputResultsOnAllTreeBranches_whenSeveralTasksAreConcatenated() {
+		// TODO
 	}
 }

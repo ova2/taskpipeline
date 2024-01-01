@@ -1,4 +1,4 @@
-package test.java;
+package taskpipeline;
 
 import java.util.List;
 
@@ -7,7 +7,7 @@ import lombok.Value;
 
 @Value
 @Builder
-public class AsyncTaskResult {
+public class TaskResult {
 
 	String name;
 

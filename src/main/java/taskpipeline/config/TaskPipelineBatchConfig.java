@@ -1,4 +1,4 @@
-package main.java.taskpipeline.config;
+package taskpipeline.config;
 
 import java.time.Duration;
 
@@ -12,7 +12,7 @@ import lombok.Value;
  */
 @Value
 @Builder
-public class TaskPipelineBatchConfig<T, R> {
+public class TaskPipelineBatchConfig<T, U> {
 
 	@Builder.Default
 	int bufferMaxSize = 50;
@@ -22,5 +22,5 @@ public class TaskPipelineBatchConfig<T, R> {
 	Duration bufferMaxTime = Duration.ofMillis(100);
 
 	@NonNull
-	BatchAggregator<T, R> batchAggregator;
+	BatchAggregator<T, U> batchAggregator;
 }

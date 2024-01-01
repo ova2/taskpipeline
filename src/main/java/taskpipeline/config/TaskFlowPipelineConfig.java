@@ -1,4 +1,4 @@
-package main.java.taskpipeline.config;
+package taskpipeline.config;
 
 import java.util.concurrent.Executor;
 

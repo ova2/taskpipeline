@@ -1,9 +1,9 @@
-package main.java.taskpipeline.config;
+package taskpipeline.config;
 
 import java.util.List;
 
 @FunctionalInterface
-public interface BatchAggregator<T, R> {
+public interface BatchAggregator<T, U> {
 
-	R aggregate(List<T> batch);
+	U aggregate(List<T> batch);
 }

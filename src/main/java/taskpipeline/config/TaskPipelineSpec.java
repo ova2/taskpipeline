@@ -1,4 +1,4 @@
-package main.java.taskpipeline.config;
+package taskpipeline.config;
 
 public enum TaskPipelineSpec {
 
