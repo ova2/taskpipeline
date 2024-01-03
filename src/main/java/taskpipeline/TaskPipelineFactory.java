@@ -51,7 +51,7 @@ public class TaskPipelineFactory {
 	/**
 	 * Creates an instance of {@link TaskTreePipeline} with the given configuration.
 	 */
-	public static TaskTreePipeline create(TaskTreePipelineConfig config) {
+	public static <T> TaskTreePipeline create(TaskTreePipelineConfig<T> config) {
 		// just an usage example
 		TaskTreePipeline pipeline = new TaskTreePipeline(null);
 		Flux<Integer> flux = pipeline.getOutput("test", Integer.class);

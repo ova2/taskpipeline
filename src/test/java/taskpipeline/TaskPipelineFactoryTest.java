@@ -15,8 +15,8 @@ import taskpipeline.config.TaskFlowPipelineConfig;
 import taskpipeline.config.TaskPipelineBatchConfig;
 import taskpipeline.config.TaskPipelineSpec;
 import taskpipeline.config.TaskTreePipelineConfig;
-import taskpipeline.config.treenode.TaskTreeIntermediateNode;
-import taskpipeline.config.treenode.TaskTreeLeafNode;
+import taskpipeline.config.tasktreenode.TaskTreeIntermediateNode;
+import taskpipeline.config.tasktreenode.TaskTreeLeafNode;
 
 @Slf4j
 class TaskPipelineFactoryTest {
@@ -140,6 +140,8 @@ class TaskPipelineFactoryTest {
 								.build()) //
 						.build()) //
 				.build();
+
+		TaskTreePipeline pipeline = TaskPipelineFactory.create(config);
 
 		// TODO
 	}

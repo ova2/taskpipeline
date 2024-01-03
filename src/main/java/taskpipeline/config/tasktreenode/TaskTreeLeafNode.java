@@ -1,4 +1,4 @@
-package taskpipeline.config.treenode;
+package taskpipeline.config.tasktreenode;
 
 import lombok.Builder;
 import lombok.NonNull;

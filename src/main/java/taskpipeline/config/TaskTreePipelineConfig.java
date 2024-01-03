@@ -10,7 +10,7 @@ import lombok.Value;
 import reactor.core.scheduler.Scheduler;
 import taskpipeline.TaskSupplier;
 import taskpipeline.TaskTreePipeline;
-import taskpipeline.config.treenode.ITaskTreeNode;
+import taskpipeline.config.tasktreenode.ITaskTreeNode;
 
 /**
  * Configuration for {@link TaskTreePipeline}.
