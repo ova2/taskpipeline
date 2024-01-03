@@ -60,16 +60,16 @@ public class TaskPipelineFactory {
 		List<ITaskTreeNode<T, ?>> taskTreeNodes = config.getTaskTreeRootNode().getTaskTreeNodes();
 		// TODO
 		if (taskTreeNodes.isEmpty()) {
-			Flux<T> rootOutput = null;
-			pipeline = new TaskTreePipeline<T>(rootOutput, null);
+			Flux<T> output = null;
+			pipeline = new TaskTreePipeline<T>(output, null);
 		} else {
 			// first, validate that all deepest (lowermost) task tree nodes are named, i.e.
 			// instances of TaskTreeLeafNode. Otherwise, we can not get output streams from
 			// the pipeline.
 			// TODO
 
-			Map<String, Flux<?>> outputs = new HashMap<>();
-			pipeline = new TaskTreePipeline<T>(null, outputs);
+			Map<String, Flux<?>> namedOutputs = new HashMap<>();
+			pipeline = new TaskTreePipeline<T>(null, namedOutputs);
 		}
 
 		return pipeline;

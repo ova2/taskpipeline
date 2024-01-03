@@ -33,28 +33,28 @@ import taskpipeline.config.tasktreenode.TaskTreeRootNode;
 public class TaskTreePipeline<T> {
 
 	/**
-	 * Provides an output from the root (top) {@link Flux} upstream. This property
-	 * is only set if the {@link TaskTreeRootNode} is the only one task tree node in
-	 * this pipeline and no other nodes exist.
+	 * Provides a direct output from the root (top) {@link Flux} upstream. This
+	 * property is only set if the {@link TaskTreeRootNode} is the only one task
+	 * tree node in this pipeline and no other nodes exist.
 	 */
-	Flux<T> rootOutput;
+	Flux<T> output;
 
 	/**
 	 * Named outputs as {@link Flux} streams. Named outputs are created from
 	 * {@link TaskTreeLeafNode}s.
 	 */
 	@Getter(AccessLevel.NONE)
-	Map<String, Flux<?>> outputs;
+	Map<String, Flux<?>> namedOutputs;
 
 	/**
 	 * Gets a named output for tasks results as {@link Flux} stream. Provided result
 	 * type should be specified by the given parameterized {@link Class}.
 	 */
 	public <O> Flux<O> getNamedOutput(String name, Class<O> clazz) {
-		if (outputs == null || !outputs.containsKey(Objects.requireNonNull(name))) {
+		if (namedOutputs == null || !namedOutputs.containsKey(Objects.requireNonNull(name))) {
 			log.warn("Named output Flux stream with the name {} doesn't exist", name);
 			return null;
 		}
-		return outputs.get(name).cast(clazz);
+		return namedOutputs.get(name).cast(clazz);
 	}
 }

@@ -1,10 +1,12 @@
 package taskpipeline;
 
 import java.time.Duration;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import lombok.extern.slf4j.Slf4j;
@@ -22,15 +24,21 @@ import taskpipeline.config.tasktreenode.TaskTreeRootNode;
 @Slf4j
 class TaskPipelineFactoryTest {
 
+	private Executor taskExecutor;
+
+	@BeforeEach
+	void beforeEach() {
+		int parallelism = Math.max((int) Math.floor(ForkJoinPool.getCommonPoolParallelism() / 2f), 2);
+		taskExecutor = Executors.newWorkStealingPool(parallelism);
+	}
+
 	@Test
 	void createTaskFlowPipeline_shouldOutputResultsInInputOrder_whenPreserveSourceOrderingWasSet() {
-		int parallelism = Math.max((int) Math.floor(ForkJoinPool.getCommonPoolParallelism() / 2f), 2);
-		ExecutorService executorService = Executors.newWorkStealingPool(parallelism);
 
 		TaskFlowPipeline<TaskResult, TaskResult> pipeline = TaskPipelineFactory.create(TaskFlowPipelineConfig.builder() //
 				.inputSpec(TaskPipelineInputSpec.UNICAST) //
 				.preserveSourceOrdering(true) //
-				.taskExecutor(executorService) //
+				.taskExecutor(taskExecutor) //
 				.build());
 
 		long ms = System.currentTimeMillis();
@@ -56,13 +64,10 @@ class TaskPipelineFactoryTest {
 
 	@Test
 	void createTaskFlowPipeline_shouldBatchAndAggregateOutputResults_whenBatchConfigurationAvailable() {
-		int parallelism = Math.max((int) Math.floor(ForkJoinPool.getCommonPoolParallelism() / 2f), 2);
-		ExecutorService executorService = Executors.newWorkStealingPool(parallelism);
-
 		TaskFlowPipeline<TaskResult, String> pipeline = TaskPipelineFactory.create( //
 				TaskFlowPipelineConfig.builder() //
 						.inputSpec(TaskPipelineInputSpec.UNICAST) //
-						.taskExecutor(executorService) //
+						.taskExecutor(taskExecutor) //
 						.build(),
 				TaskPipelineBatchConfig.<TaskResult, String>builder() //
 						.bufferMaxSize(10) //
@@ -93,6 +98,20 @@ class TaskPipelineFactoryTest {
 		}
 	}
 
+	@Test
+	void createTaskTreePipeline_shouldProvideOutputFromTaskTreeRootNode_whenOnlyOneTaskIsAvailable() {
+		TaskTreePipelineConfig<Long> config = TaskTreePipelineConfig.<Long>builder() //
+				.taskExecutor(taskExecutor) //
+				.taskTreeRootNode(TaskTreeRootNode.<Long>builder() //
+						.task(() -> Flux.interval(Duration.ofMillis(250)).take(10)) //
+						.build())
+				.build();
+
+		TaskTreePipeline<Long> pipeline = TaskPipelineFactory.create(config);
+
+		// TODO
+	}
+
 	/**
 	 * Create and test a TaskTreePipeline with a depth = 3.
 	 * 
@@ -108,7 +127,6 @@ class TaskPipelineFactoryTest {
 	@Test
 	void createTaskTreePipeline_shouldOutputResultsOnAllTreeBranches_whenSeveralTasksAreConcatenated() {
 		int parallelism = Math.max((int) Math.floor(ForkJoinPool.getCommonPoolParallelism() / 2f), 2);
-		ExecutorService taskExecutor = Executors.newWorkStealingPool(parallelism);
 		ExecutorService outputExecutor = Executors.newWorkStealingPool(parallelism);
 
 		TaskTreePipelineConfig<Long> config = TaskTreePipelineConfig.<Long>builder() //
