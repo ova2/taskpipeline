@@ -1,5 +1,8 @@
 package taskpipeline;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
@@ -15,6 +18,7 @@ import reactor.core.scheduler.Schedulers;
 import taskpipeline.config.TaskFlowPipelineConfig;
 import taskpipeline.config.TaskPipelineBatchConfig;
 import taskpipeline.config.TaskTreePipelineConfig;
+import taskpipeline.config.tasktreenode.ITaskTreeNode;
 
 /**
  * Factory for two kinds of pipeline.
@@ -51,13 +55,19 @@ public class TaskPipelineFactory {
 	/**
 	 * Creates an instance of {@link TaskTreePipeline} with the given configuration.
 	 */
-	public static <T> TaskTreePipeline create(TaskTreePipelineConfig<T> config) {
-		// just an usage example
-		TaskTreePipeline pipeline = new TaskTreePipeline(null);
-		Flux<Integer> flux = pipeline.getOutput("test", Integer.class);
-
+	public static <T> TaskTreePipeline<T> create(TaskTreePipelineConfig<T> config) {
+		TaskTreePipeline<T> pipeline;
+		List<ITaskTreeNode<T, ?>> taskTreeNodes = config.getTaskTreeRootNode().getTaskTreeNodes();
 		// TODO
-		return null;
+		if (taskTreeNodes.isEmpty()) {
+			Flux<T> rootOutput = null;
+			pipeline = new TaskTreePipeline<T>(rootOutput, null);
+		} else {
+			Map<String, Flux<?>> outputs = new HashMap<>();
+			pipeline = new TaskTreePipeline<T>(null, outputs);
+		}
+
+		return pipeline;
 	}
 
 	private static <T> Sinks.Many<TaskSupplier<T>> createTaskFlowPipelineInput(TaskFlowPipelineConfig config) {

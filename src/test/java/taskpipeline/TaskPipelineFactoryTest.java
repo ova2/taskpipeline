@@ -17,6 +17,7 @@ import taskpipeline.config.TaskPipelineSpec;
 import taskpipeline.config.TaskTreePipelineConfig;
 import taskpipeline.config.tasktreenode.TaskTreeIntermediateNode;
 import taskpipeline.config.tasktreenode.TaskTreeLeafNode;
+import taskpipeline.config.tasktreenode.TaskTreeRootNode;
 
 @Slf4j
 class TaskPipelineFactoryTest {
@@ -93,7 +94,7 @@ class TaskPipelineFactoryTest {
 	}
 
 	/**
-	 * Create and test a TaskTreePipeline with a deep = 3.
+	 * Create and test a TaskTreePipeline with a depth = 3.
 	 * 
 	 * <pre>
 	 * Root Task
@@ -111,37 +112,39 @@ class TaskPipelineFactoryTest {
 		ExecutorService outputExecutor = Executors.newWorkStealingPool(parallelism);
 
 		TaskTreePipelineConfig<Long> config = TaskTreePipelineConfig.<Long>builder() //
-				.rootTask(() -> Flux.interval(Duration.ofMillis(250)).take(10)) //
 				.taskExecutor(taskExecutor) //
 				.outputExecutor(outputExecutor) //
-				.taskTreeNode(TaskTreeLeafNode.<Long, Long, Long>builder() //
-						.name("sub-task-1") //
-						.task((Long input) -> Mono.just(input + 1)) //
-						.build()) //
-				.taskTreeNode(TaskTreeIntermediateNode.<Long, Long>builder() //
-						.task((Long input) -> Mono.just(input * input)) //
-						.taskTreeNode(TaskTreeLeafNode.<Long, String, String>builder() //
-								.name("sub-task-21") //
-								.task((Long input) -> Mono.just(String.valueOf(input + 1000))) //
-								.batchConfig(TaskPipelineBatchConfig.<String, String>builder() //
-										.bufferMaxSize(5) //
-										.bufferMaxTime(Duration.ofMillis(150)) //
-										.batchAggregator(batch -> String.join(",", batch.stream() //
-												.toList()))
+				.taskTreeRootNode(TaskTreeRootNode.<Long>builder() //
+						.task(() -> Flux.interval(Duration.ofMillis(250)).take(10)) //
+						.taskTreeNode(TaskTreeLeafNode.<Long, Long, Long>builder() //
+								.name("sub-task-1") //
+								.task((Long input) -> Mono.just(input + 1)) //
+								.build()) //
+						.taskTreeNode(TaskTreeIntermediateNode.<Long, Long>builder() //
+								.task((Long input) -> Mono.just(input * input)) //
+								.taskTreeNode(TaskTreeLeafNode.<Long, String, String>builder() //
+										.name("sub-task-21") //
+										.task((Long input) -> Mono.just(String.valueOf(input + 1000))) //
+										.batchConfig(TaskPipelineBatchConfig.<String, String>builder() //
+												.bufferMaxSize(5) //
+												.bufferMaxTime(Duration.ofMillis(150)) //
+												.batchAggregator(batch -> String.join(",", batch.stream() //
+														.toList()))
+												.build()) //
+										.build()) //
+								.taskTreeNode(TaskTreeLeafNode.<Long, String, String>builder() //
+										.name("sub-task-22") //
+										.task((Long input) -> Mono.just(String.valueOf(input + 2000))) //
+										.build()) //
+								.taskTreeNode(TaskTreeLeafNode.<Long, String, String>builder() //
+										.name("sub-task-23") //
+										.task((Long input) -> Mono.just(String.valueOf(input + 3000))) //
 										.build()) //
 								.build()) //
-						.taskTreeNode(TaskTreeLeafNode.<Long, String, String>builder() //
-								.name("sub-task-22") //
-								.task((Long input) -> Mono.just(String.valueOf(input + 2000))) //
-								.build()) //
-						.taskTreeNode(TaskTreeLeafNode.<Long, String, String>builder() //
-								.name("sub-task-23") //
-								.task((Long input) -> Mono.just(String.valueOf(input + 3000))) //
-								.build()) //
-						.build()) //
+						.build())
 				.build();
 
-		TaskTreePipeline pipeline = TaskPipelineFactory.create(config);
+		TaskTreePipeline<Long> pipeline = TaskPipelineFactory.create(config);
 
 		// TODO
 	}

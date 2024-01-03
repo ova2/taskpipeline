@@ -6,7 +6,10 @@ import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Value;
+import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
+import taskpipeline.config.tasktreenode.TaskTreeLeafNode;
+import taskpipeline.config.tasktreenode.TaskTreeRootNode;
 
 /**
  * Represents a non-blocking pipeline with the static pre-configured
@@ -26,8 +29,20 @@ import reactor.core.publisher.Flux;
  * A configured pipeline can be created by {@link TaskPipelineFactory}.
  */
 @Value
-public class TaskTreePipeline {
+@Slf4j
+public class TaskTreePipeline<T> {
 
+	/**
+	 * Provides an output from the root (top) {@link Flux} upstream. This property
+	 * is only set if the {@link TaskTreeRootNode} is the only one task tree node in
+	 * this pipeline and no other nodes exist.
+	 */
+	Flux<T> rootOutput;
+
+	/**
+	 * Named outputs as {@link Flux} streams. This property is only set if there are
+	 * named {@link TaskTreeLeafNode}s in this pipeline.
+	 */
 	@Getter(AccessLevel.NONE)
 	Map<String, Flux<?>> outputs;
 
@@ -35,10 +50,11 @@ public class TaskTreePipeline {
 	 * Gets a named output for tasks results as {@link Flux} stream. Provided result
 	 * type should be specified by the given parameterized {@link Class}.
 	 */
-	public <T> Flux<T> getOutput(String key, Class<T> clazz) {
-		if (!outputs.containsKey(Objects.requireNonNull(key))) {
+	public <O> Flux<O> getNamedOutput(String name, Class<O> clazz) {
+		if (outputs == null || !outputs.containsKey(Objects.requireNonNull(name))) {
+			log.warn("Named output Flux stream with the name {} doesn't exist", name);
 			return null;
 		}
-		return outputs.get(key).cast(clazz);
+		return outputs.get(name).cast(clazz);
 	}
 }

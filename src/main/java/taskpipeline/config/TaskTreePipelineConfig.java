@@ -1,16 +1,13 @@
 package taskpipeline.config;
 
-import java.util.List;
 import java.util.concurrent.Executor;
 
 import lombok.Builder;
 import lombok.NonNull;
-import lombok.Singular;
 import lombok.Value;
 import reactor.core.scheduler.Scheduler;
-import taskpipeline.TaskSupplier;
 import taskpipeline.TaskTreePipeline;
-import taskpipeline.config.tasktreenode.ITaskTreeNode;
+import taskpipeline.config.tasktreenode.TaskTreeRootNode;
 
 /**
  * Configuration for {@link TaskTreePipeline}.
@@ -18,12 +15,6 @@ import taskpipeline.config.tasktreenode.ITaskTreeNode;
 @Value
 @Builder
 public class TaskTreePipelineConfig<T> {
-
-	/**
-	 * Task for the root node of the task tree.
-	 */
-	@NonNull
-	TaskSupplier<T> rootTask;
 
 	/**
 	 * {@link Executor} used for parallel task execution.
@@ -44,9 +35,8 @@ public class TaskTreePipelineConfig<T> {
 	boolean preserveSourceOrdering = false;
 
 	/**
-	 * Collection of {@link ITaskTreeNode}s as configurations for direct children of
-	 * the root node.
+	 * Configurations for the root node in the task tree.
 	 */
-	@Singular("taskTreeNode")
-	List<ITaskTreeNode<T, ?>> taskTreeNodes;
+	@NonNull
+	TaskTreeRootNode<T> taskTreeRootNode;
 }
