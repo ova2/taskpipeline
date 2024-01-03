@@ -1,6 +1,6 @@
 package taskpipeline.config;
 
-public enum TaskPipelineSpec {
+public enum TaskPipelineInputSpec {
 
 	UNICAST, MULTICAST, MULTICAST_REPLAY
 }

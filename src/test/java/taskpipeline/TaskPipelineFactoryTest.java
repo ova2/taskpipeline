@@ -13,7 +13,7 @@ import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
 import taskpipeline.config.TaskFlowPipelineConfig;
 import taskpipeline.config.TaskPipelineBatchConfig;
-import taskpipeline.config.TaskPipelineSpec;
+import taskpipeline.config.TaskPipelineInputSpec;
 import taskpipeline.config.TaskTreePipelineConfig;
 import taskpipeline.config.tasktreenode.TaskTreeIntermediateNode;
 import taskpipeline.config.tasktreenode.TaskTreeLeafNode;
@@ -28,7 +28,7 @@ class TaskPipelineFactoryTest {
 		ExecutorService executorService = Executors.newWorkStealingPool(parallelism);
 
 		TaskFlowPipeline<TaskResult, TaskResult> pipeline = TaskPipelineFactory.create(TaskFlowPipelineConfig.builder() //
-				.pipelineSpec(TaskPipelineSpec.UNICAST) //
+				.inputSpec(TaskPipelineInputSpec.UNICAST) //
 				.preserveSourceOrdering(true) //
 				.taskExecutor(executorService) //
 				.build());
@@ -61,7 +61,7 @@ class TaskPipelineFactoryTest {
 
 		TaskFlowPipeline<TaskResult, String> pipeline = TaskPipelineFactory.create( //
 				TaskFlowPipelineConfig.builder() //
-						.pipelineSpec(TaskPipelineSpec.UNICAST) //
+						.inputSpec(TaskPipelineInputSpec.UNICAST) //
 						.taskExecutor(executorService) //
 						.build(),
 				TaskPipelineBatchConfig.<TaskResult, String>builder() //

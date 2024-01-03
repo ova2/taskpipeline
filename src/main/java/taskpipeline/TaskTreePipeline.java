@@ -40,8 +40,8 @@ public class TaskTreePipeline<T> {
 	Flux<T> rootOutput;
 
 	/**
-	 * Named outputs as {@link Flux} streams. This property is only set if there are
-	 * named {@link TaskTreeLeafNode}s in this pipeline.
+	 * Named outputs as {@link Flux} streams. Named outputs are created from
+	 * {@link TaskTreeLeafNode}s.
 	 */
 	@Getter(AccessLevel.NONE)
 	Map<String, Flux<?>> outputs;

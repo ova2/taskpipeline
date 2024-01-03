@@ -63,6 +63,11 @@ public class TaskPipelineFactory {
 			Flux<T> rootOutput = null;
 			pipeline = new TaskTreePipeline<T>(rootOutput, null);
 		} else {
+			// first, validate that all deepest (lowermost) task tree nodes are named, i.e.
+			// instances of TaskTreeLeafNode. Otherwise, we can not get output streams from
+			// the pipeline.
+			// TODO
+
 			Map<String, Flux<?>> outputs = new HashMap<>();
 			pipeline = new TaskTreePipeline<T>(null, outputs);
 		}
@@ -72,7 +77,7 @@ public class TaskPipelineFactory {
 
 	private static <T> Sinks.Many<TaskSupplier<T>> createTaskFlowPipelineInput(TaskFlowPipelineConfig config) {
 		ManySpec manySpec = Sinks.many();
-		return switch (config.getPipelineSpec()) {
+		return switch (config.getInputSpec()) {
 		case UNICAST -> manySpec.unicast().<TaskSupplier<T>>onBackpressureBuffer();
 		case MULTICAST -> manySpec.multicast().<TaskSupplier<T>>onBackpressureBuffer();
 		case MULTICAST_REPLAY -> manySpec.replay().<TaskSupplier<T>>all();

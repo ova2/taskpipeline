@@ -29,7 +29,7 @@ public class TaskTreePipelineConfig<T> {
 	Executor outputExecutor;
 
 	/**
-	 * Boolean flag if the input source ordering should be preserved for output.
+	 * Boolean flag if the input source ordering should be preserved for output(s).
 	 */
 	@Builder.Default
 	boolean preserveSourceOrdering = false;
