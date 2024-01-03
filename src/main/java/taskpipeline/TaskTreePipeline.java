@@ -14,9 +14,14 @@ import reactor.core.publisher.Flux;
  * Such pre-configured task tree serves as input. The result of task execution
  * of a parent task gets passed as input into all direct child tasks. Every task
  * can be executed in parallel in multiple threads. The results of "leaf" tasks
- * executions can be batched if necessary. The results of tasks executions for
- * task tree branches are available in form of {@link Flux} streams. Such
- * outputs on task tree branches can occur in different threads.
+ * executions can be batched if necessary.
+ * 
+ * The results of tasks executions for task tree branches are available in form
+ * of {@link Flux} streams. Such outputs on task tree branches can occur in
+ * different threads. Any upstream broadcasts data to all subscribers along the
+ * task tree. The connection to the top upstream source only happens when all
+ * subscribers subscribe. The disconnection happens when all subscribers
+ * cancelled or the top upstream source completed.
  * 
  * A configured pipeline can be created by {@link TaskPipelineFactory}.
  */

@@ -10,6 +10,7 @@ import lombok.Value;
 import reactor.core.scheduler.Scheduler;
 import taskpipeline.TaskSupplier;
 import taskpipeline.TaskTreePipeline;
+import taskpipeline.config.treenode.ITaskTreeNode;
 
 /**
  * Configuration for {@link TaskTreePipeline}.
@@ -17,6 +18,12 @@ import taskpipeline.TaskTreePipeline;
 @Value
 @Builder
 public class TaskTreePipelineConfig<T> {
+
+	/**
+	 * Task for the root node of the task tree.
+	 */
+	@NonNull
+	TaskSupplier<T> rootTask;
 
 	/**
 	 * {@link Executor} used for parallel task execution.
@@ -31,22 +38,15 @@ public class TaskTreePipelineConfig<T> {
 	Executor outputExecutor;
 
 	/**
-	 * Task for the root node of the task tree.
-	 */
-	@NonNull
-	TaskSupplier<T> rootTask;
-
-	/**
-	 * Boolean flag for the root task if the input source ordering should be
-	 * preserved for output.
+	 * Boolean flag if the input source ordering should be preserved for output.
 	 */
 	@Builder.Default
 	boolean preserveSourceOrdering = false;
 
 	/**
-	 * Collection of {@link TaskTreeNode}s as configurations for direct child tasks
-	 * of the root task.
+	 * Collection of {@link ITaskTreeNode}s as configurations for direct children of
+	 * the root node.
 	 */
 	@Singular("taskTreeNode")
-	List<TaskTreeNode<T, ?, ?>> taskTreeNodes;
+	List<ITaskTreeNode<T, ?>> taskTreeNodes;
 }
