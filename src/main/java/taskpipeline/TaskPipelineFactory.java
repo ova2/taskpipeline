@@ -76,7 +76,10 @@ public class TaskPipelineFactory {
 	}
 
 	private static <T> Sinks.Many<TaskSupplier<T>> createTaskFlowPipelineInput(TaskFlowPipelineConfig config) {
-		ManySpec manySpec = Sinks.many();
+		// Use unsafe sinks which are are not serialized nor thread safe. If needed they
+		// must be externally synchronized. This allows the sinks to have less overhead,
+		// since they don't care to detect concurrent access anymore.
+		ManySpec manySpec = Sinks.unsafe().many();
 		return switch (config.getInputSpec()) {
 		case UNICAST -> manySpec.unicast().<TaskSupplier<T>>onBackpressureBuffer();
 		case MULTICAST -> manySpec.multicast().<TaskSupplier<T>>onBackpressureBuffer();
@@ -103,5 +106,9 @@ public class TaskPipelineFactory {
 	private static <T> Function<TaskSupplier<T>, Mono<Publisher<T>>> getMapper(Executor taskExecutor) {
 		return (TaskSupplier<T> task) -> Mono
 				.fromFuture(CompletableFuture.supplyAsync(() -> task.execute(), taskExecutor));
+		// .thenApply((Publisher<T> input) -> {
+		// System.out.println("thenApply: " + Thread.currentThread().getId());
+		// return input;
+		// }));
 	}
 }
